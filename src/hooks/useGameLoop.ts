@@ -5,37 +5,49 @@ import { useInterval } from './useInterval';
 
 export const useGameLoop = () => {
   const [board, setBoard] = useState<Board>(createInitialBoard());
-  const [activePiece, setActivePiece] = useState<Tetromino | null>(null);
-  const [nextPiece, setNextPiece] = useState<Tetromino>(spawnPiece());
+  const [pieces, setPieces] = useState<{ active: Tetromino | null; next: Tetromino }>(() => ({
+    active: null,
+    next: spawnPiece(),
+  }));
   const [status, setStatus] = useState<GameStatus>('PLAYING');
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [lines, setLines] = useState(0);
 
+  const { active: activePiece, next: nextPiece } = pieces;
+
   const spawn = useCallback(() => {
-    const newPiece = nextPiece;
-    const followingPiece = spawnPiece();
+    setPieces(prev => {
+      if (prev.active !== null) return prev;
 
-    if (isGameOver(board, newPiece)) {
-      setStatus('GAME_OVER');
-      return;
-    }
+      const nextPieceToSpawn = prev.next;
+      const followingPiece = spawnPiece();
+      
+      if (isGameOver(board, nextPieceToSpawn)) {
+        setTimeout(() => setStatus('GAME_OVER'), 0);
+        return prev;
+      }
 
-    setActivePiece(newPiece);
-    setNextPiece(followingPiece);
-  }, [board, nextPiece]);
+      return {
+        active: nextPieceToSpawn,
+        next: followingPiece,
+      };
+    });
+  }, [board]);
 
   const restart = useCallback(() => {
     setBoard(createInitialBoard());
-    setActivePiece(null);
-    setNextPiece(spawnPiece());
+    setPieces({
+      active: null,
+      next: spawnPiece(),
+    });
     setScore(0);
     setLevel(1);
     setLines(0);
     setStatus('PLAYING');
   }, []);
 
-  const handleLineClears = useCallback((newGrid: any[][]) => {
+  const handleLineClears = useCallback((newGrid: (ShapeType | null)[][]) => {
     const { board: clearedBoard, linesCleared } = checkLines({ ...board, grid: newGrid });
     setBoard(clearedBoard);
     if (linesCleared > 0) {
@@ -48,8 +60,7 @@ export const useGameLoop = () => {
         return newTotal;
       });
     }
-    spawn();
-  }, [board, level, spawn]);
+  }, [board, level]);
 
   const drop = useCallback(() => {
     if (!activePiece || status !== 'PLAYING') return;
@@ -57,13 +68,18 @@ export const useGameLoop = () => {
     const { piece: movedPiece, success } = movePiece(board, activePiece, 'DOWN');
     
     if (success) {
-      setActivePiece(movedPiece);
+      setPieces(prev => ({ ...prev, active: movedPiece }));
     } else {
       lockPiece(activePiece);
     }
   }, [activePiece, board, status]);
 
   const lockPiece = useCallback((piece: Tetromino) => {
+    setPieces(prev => {
+      if (prev.active !== piece) return prev;
+      return { ...prev, active: null };
+    });
+
     const newGrid = [...board.grid.map(row => [...row])];
     const matrix = getTetrominoMatrix(piece.shape, piece.rotation);
     
@@ -100,15 +116,15 @@ export const useGameLoop = () => {
 
     if (e.key === 'ArrowLeft') {
       const { piece: moved } = movePiece(board, activePiece, 'LEFT');
-      setActivePiece(moved);
+      setPieces(prev => ({ ...prev, active: moved }));
     } else if (e.key === 'ArrowRight') {
       const { piece: moved } = movePiece(board, activePiece, 'RIGHT');
-      setActivePiece(moved);
+      setPieces(prev => ({ ...prev, active: moved }));
     } else if (e.key === 'ArrowDown') {
       drop();
     } else if (e.key === 'ArrowUp') {
       const { piece: rotated } = rotatePiece(board, activePiece);
-      setActivePiece(rotated);
+      setPieces(prev => ({ ...prev, active: rotated }));
     } else if (e.code === 'Space') {
       e.preventDefault();
       hardDrop();

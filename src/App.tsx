@@ -6,7 +6,7 @@ import GameOver from './components/GameOver';
 import './styles/index.css';
 
 function App() {
-  const { board, activePiece, nextPiece, score, status, restart } = useGameLoop();
+  const { board, activePiece, nextPiece, score, level, status, restart } = useGameLoop();
 
   return (
     <div className="game-container" style={{ position: 'relative' }}>
@@ -14,7 +14,7 @@ function App() {
       <div className="game-layout" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
         <Board board={board} activePiece={activePiece} />
         <div className="game-info">
-          <Scoreboard score={score} level={1} />
+          <Scoreboard score={score} level={level} />
           <Preview tetromino={nextPiece} />
         </div>
       </div>
