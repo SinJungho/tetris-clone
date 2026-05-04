@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialBoard, spawnPiece, movePiece, rotatePiece, checkLines, isGameOver } from '../../src/logic/engine';
-import { TETROMINOES } from '../../src/logic/constants';
 
 describe('Game Engine', () => {
   it('creates an empty board', () => {
@@ -63,9 +62,10 @@ describe('Game Engine', () => {
 
   it('detects game over', () => {
     const board = createInitialBoard();
-    // Fill the top row
+    // Fill the top two rows to ensure collision with any shape
     for (let x = 0; x < 10; x++) {
       board.grid[0][x] = 'I';
+      board.grid[1][x] = 'I';
     }
     const piece = spawnPiece();
     expect(isGameOver(board, piece)).toBe(true);

@@ -3,6 +3,8 @@ import type { ShapeType } from '../types/game';
 export const COLS = 10;
 export const ROWS = 20;
 
+export const ONBOARDING_KEY = 'tetris_onboarding_seen';
+
 export const TETROMINOES: Record<ShapeType, { shape: number[][]; color: string }> = {
   I: {
     shape: [

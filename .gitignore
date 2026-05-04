@@ -23,6 +23,6 @@ dist-ssr
 *.sw?
 
 # AI
-.gemini/ 
-.specify/
-specs/
+.gemini 
+.specify
+specs

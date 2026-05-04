@@ -1,15 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Board, Tetromino, GameStatus } from '../types/game';
+import type { Board, Tetromino, GameStatus, ShapeType } from '../types/game';
 import { createInitialBoard, spawnPiece, movePiece, rotatePiece, getTetrominoMatrix, checkLines, isGameOver } from '../logic/engine';
 import { useInterval } from './useInterval';
 
-export const useGameLoop = () => {
+export const useGameLoop = (options?: { initialStatus?: GameStatus }) => {
   const [board, setBoard] = useState<Board>(createInitialBoard());
   const [pieces, setPieces] = useState<{ active: Tetromino | null; next: Tetromino }>(() => ({
     active: null,
     next: spawnPiece(),
   }));
-  const [status, setStatus] = useState<GameStatus>('PLAYING');
+  const [status, setStatus] = useState<GameStatus>(options?.initialStatus || 'PLAYING');
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [lines, setLines] = useState(0);
@@ -48,19 +48,48 @@ export const useGameLoop = () => {
   }, []);
 
   const handleLineClears = useCallback((newGrid: (ShapeType | null)[][]) => {
-    const { board: clearedBoard, linesCleared } = checkLines({ ...board, grid: newGrid });
-    setBoard(clearedBoard);
-    if (linesCleared > 0) {
-      setScore(prev => prev + linesCleared * 100 * level);
-      setLines(prev => {
-        const newTotal = prev + linesCleared;
-        if (newTotal >= level * 10) {
-          setLevel(l => l + 1);
-        }
-        return newTotal;
+    setBoard(prev => {
+      const { board: clearedBoard, linesCleared } = checkLines({ ...prev, grid: newGrid });
+      if (linesCleared > 0) {
+        setScore(scorePrev => scorePrev + linesCleared * 100 * level);
+        setLines(linesPrev => {
+          const newTotal = linesPrev + linesCleared;
+          if (newTotal >= level * 10) {
+            setLevel(l => l + 1);
+          }
+          return newTotal;
+        });
+      }
+      return clearedBoard;
+    });
+  }, [level]);
+
+  const lockPiece = useCallback((piece: Tetromino) => {
+    setPieces(prev => {
+      if (prev.active !== piece) return prev;
+      return { ...prev, active: null };
+    });
+
+    setBoard(prev => {
+      const newGrid = [...prev.grid.map(row => [...row])];
+      const matrix = getTetrominoMatrix(piece.shape, piece.rotation);
+      
+      matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            const boardY = piece.position.y + y;
+            const boardX = piece.position.x + x;
+            if (boardY >= 0 && boardY < prev.height && boardX >= 0 && boardX < prev.width) {
+              newGrid[boardY][boardX] = piece.shape;
+            }
+          }
+        });
       });
-    }
-  }, [board, level]);
+
+      handleLineClears(newGrid);
+      return prev; // handleLineClears will update board
+    });
+  }, [handleLineClears]);
 
   const drop = useCallback(() => {
     if (!activePiece || status !== 'PLAYING') return;
@@ -72,31 +101,7 @@ export const useGameLoop = () => {
     } else {
       lockPiece(activePiece);
     }
-  }, [activePiece, board, status]);
-
-  const lockPiece = useCallback((piece: Tetromino) => {
-    setPieces(prev => {
-      if (prev.active !== piece) return prev;
-      return { ...prev, active: null };
-    });
-
-    const newGrid = [...board.grid.map(row => [...row])];
-    const matrix = getTetrominoMatrix(piece.shape, piece.rotation);
-    
-    matrix.forEach((row, y) => {
-      row.forEach((value, x) => {
-        if (value !== 0) {
-          const boardY = piece.position.y + y;
-          const boardX = piece.position.x + x;
-          if (boardY >= 0 && boardY < board.height && boardX >= 0 && boardX < board.width) {
-            newGrid[boardY][boardX] = piece.shape;
-          }
-        }
-      });
-    });
-
-    handleLineClears(newGrid);
-  }, [board, handleLineClears]);
+  }, [activePiece, board, lockPiece, status]);
 
   const hardDrop = useCallback(() => {
     if (!activePiece || status !== 'PLAYING') return;
@@ -112,6 +117,15 @@ export const useGameLoop = () => {
   }, [activePiece, board, lockPiece, status]);
 
   const handleInput = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (status === 'PLAYING') {
+        setStatus('PAUSED');
+      } else if (status === 'PAUSED') {
+        setStatus('PLAYING');
+      }
+      return;
+    }
+
     if (status !== 'PLAYING' || !activePiece) return;
 
     if (e.key === 'ArrowLeft') {
@@ -137,7 +151,10 @@ export const useGameLoop = () => {
   }, [handleInput]);
 
   useEffect(() => {
-    if (!activePiece && status === 'PLAYING') spawn();
+    if (!activePiece && status === 'PLAYING') {
+      const timer = setTimeout(() => spawn(), 0);
+      return () => clearTimeout(timer);
+    }
   }, [activePiece, spawn, status]);
 
   useInterval(() => {
@@ -153,5 +170,6 @@ export const useGameLoop = () => {
     lines,
     status,
     restart,
+    setStatus,
   };
 };
