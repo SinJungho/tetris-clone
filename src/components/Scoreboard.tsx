@@ -10,11 +10,11 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ score, level }) => {
   return (
     <div className="scoreboard">
       <div className="stat">
-        <h2>Score</h2>
+        <h2>점수</h2>
         <p>{score}</p>
       </div>
       <div className="stat">
-        <h2>Level</h2>
+        <h2>레벨</h2>
         <p>{level}</p>
       </div>
     </div>

@@ -28,14 +28,14 @@ describe('App Onboarding Integration', () => {
     render(<App />);
     
     // Should show onboarding
-    expect(screen.getByText('Game Controls')).toBeInTheDocument();
+    expect(screen.getByText('게임 조작법')).toBeInTheDocument();
     
     // Click Start Game
-    const button = screen.getByText('Start Game');
+    const button = screen.getByText('게임 시작');
     fireEvent.click(button);
     
     // Should hide onboarding
-    expect(screen.queryByText('Game Controls')).not.toBeInTheDocument();
+    expect(screen.queryByText('게임 조작법')).not.toBeInTheDocument();
     
     // Should set localStorage
     expect(localStorage.getItem(ONBOARDING_KEY)).toBe('true');
@@ -45,14 +45,14 @@ describe('App Onboarding Integration', () => {
     localStorage.setItem(ONBOARDING_KEY, 'true');
     render(<App />);
     
-    expect(screen.queryByText('Game Controls')).not.toBeInTheDocument();
+    expect(screen.queryByText('게임 조작법')).not.toBeInTheDocument();
   });
 
   it('initially pauses game when onboarding is shown', async () => {
     render(<App />);
     
     // Onboarding shown
-    expect(screen.getByText('Game Controls')).toBeInTheDocument();
+    expect(screen.getByText('게임 조작법')).toBeInTheDocument();
     
     // Wait some time
     await act(async () => {

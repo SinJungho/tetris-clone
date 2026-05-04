@@ -8,8 +8,8 @@ interface GameOverProps {
 const GameOver: React.FC<GameOverProps> = ({ onRestart }) => {
   return (
     <div className="game-over-overlay">
-      <div>GAME OVER</div>
-      <button onClick={onRestart}>Restart</button>
+      <div>게임 종료</div>
+      <button onClick={onRestart}>다시 시작</button>
     </div>
   );
 };

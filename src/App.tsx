@@ -26,7 +26,7 @@ function App() {
 
   return (
     <div className="game-container" style={{ position: 'relative' }}>
-      <h1>Tetris Clone</h1>
+      <h1>테트리스 클론</h1>
       <div className="game-layout" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
         <Board board={board} activePiece={activePiece} />
         <div className="game-info">
